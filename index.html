@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Gestão de Contatos</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #f5f5f5;
+    margin: 20px;
+}
+h1 { text-align: center; margin-bottom: 20px; }
+
+.board {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.column {
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    width: 220px;
+    padding: 10px;
+}
+
+.column h2 {
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.item {
+    background: #eaeaea;
+    padding: 8px;
+    border-radius: 4px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    position: relative;
+    font-size: 14px;
+}
+
+.item:hover { background: #d0d0d0; }
+
+.details {
+    display: none;
+    position: relative;
+    background: #fff;
+    border: 1px solid #999;
+    border-radius: 4px;
+    padding: 8px;
+    margin-top: 4px;
+    font-size: 13px;
+}
+
+.item.show .details { display: block; }
+
+.add-btn, .btn { padding: 4px 6px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; margin: 2px 0; }
+.add-btn { width: 100%; background: #007bff; color: white; }
+.btn-edit { background: #ffc107; color: #000; }
+.btn-delete { background: #dc3545; color: #fff; }
+
+.form-inline {
+    display: none;
+    flex-direction: column;
+    margin-bottom: 8px;
+}
+.form-inline input {
+    margin-bottom: 4px;
+    padding: 4px;
+    font-size: 13px;
+}
+.form-inline button { margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<h1>Recorrências time de liderança Claro regional CO</h1>
+
+<div class="board">
+    <!-- UF -->
+    <div class="column" id="col-uf">
+        <h2>UF</h2>
+        <button class="add-btn" onclick="toggleForm('uf')">Adicionar</button>
+        <div class="form-inline" id="form-uf">
+            <input type="text" placeholder="Nome" id="nome-uf">
+            <input type="text" placeholder="Telefone" id="telefone-uf" oninput="mascaraTelefone(this)">
+            <input type="text" placeholder="Email" id="email-uf">
+            <button onclick="submitForm('uf')">Salvar</button>
+        </div>
+        <div id="items-uf"></div>
+    </div>
+
+    <!-- ASSISTÊNCIA TÉCNICA -->
+    <div class="column" id="col-assistencia">
+        <h2>ASSISTÊNCIA TÉCNICA</h2>
+        <button class="add-btn" onclick="toggleForm('assistencia')">Adicionar</button>
+        <div class="form-inline" id="form-assistencia">
+            <input type="text" placeholder="Nome" id="nome-assistencia">
+            <input type="text" placeholder="Telefone" id="telefone-assistencia" oninput="mascaraTelefone(this)">
+            <input type="text" placeholder="Email" id="email-assistencia">
+            <button onclick="submitForm('assistencia')">Salvar</button>
+        </div>
+        <div id="items-assistencia"></div>
+    </div>
+
+    <!-- BACKBONE -->
+    <div class="column" id="col-backbone">
+        <h2>BACKBONE</h2>
+        <button class="add-btn" onclick="toggleForm('backbone')">Adicionar</button>
+        <div class="form-inline" id="form-backbone">
+            <input type="text" placeholder="Nome" id="nome-backbone">
+            <input type="text" placeholder="Telefone" id="telefone-backbone" oninput="mascaraTelefone(this)">
+            <input type="text" placeholder="Email" id="email-backbone">
+            <button onclick="submitForm('backbone')">Salvar</button>
+        </div>
+        <div id="items-backbone"></div>
+    </div>
+
+    <!-- CAMPO CABO -->
+    <div class="column" id="col-campo">
+        <h2>CAMPO CABO</h2>
+        <button class="add-btn" onclick="toggleForm('campo')">Adicionar</button>
+        <div class="form-inline" id="form-campo">
+            <input type="text" placeholder="Nome" id="nome-campo">
+            <input type="text" placeholder="Telefone" id="telefone-campo" oninput="mascaraTelefone(this)">
+            <input type="text" placeholder="Email" id="email-campo">
+            <button onclick="submitForm('campo')">Salvar</button>
+        </div>
+        <div id="items-campo"></div>
+    </div>
+
+    <!-- MÓVEL -->
+    <div class="column" id="col-movel">
+        <h2>MÓVEL</h2>
+        <button class="add-btn" onclick="toggleForm('movel')">Adicionar</button>
+        <div class="form-inline" id="form-movel">
+            <input type="text" placeholder="Nome" id="nome-movel">
+            <input type="text" placeholder="Telefone" id="telefone-movel" oninput="mascaraTelefone(this)">
+            <input type="text" placeholder="Email" id="email-movel">
+            <button onclick="submitForm('movel')">Salvar</button>
+        </div>
+        <div id="items-movel"></div>
+    </div>
+</div>
+
+<script>
+const storageKey = "contatosData";
+
+let listas = { uf: [], assistencia: [], backbone: [], campo: [], movel: [] };
+let editIndex = { uf: null, assistencia: null, backbone: null, campo: null, movel: null };
+
+// Carregar do LocalStorage
+function load() {
+    const data = localStorage.getItem(storageKey);
+    if(data) listas = JSON.parse(data);
+    renderAll();
+}
+
+// Salvar no LocalStorage
+function save() {
+    localStorage.setItem(storageKey, JSON.stringify(listas));
+}
+
+// Máscara de telefone
+function mascaraTelefone(input) {
+    let v = input.value.replace(/\D/g, ""); // Remove tudo que não for número
+    if(v.length > 11) v = v.slice(0,11);
+
+    if(v.length > 6){
+        v = v.replace(/^(\d{2})(\d{5})(\d{0,4})$/,"($1) $2-$3");
+    } else if(v.length > 2){
+        v = v.replace(/^(\d{2})(\d{0,5})$/,"($1) $2");
+    } else {
+        v = v.replace(/^(\d*)$/,"($1");
+    }
+    input.value = v;
+}
+
+function toggleForm(coluna, editar=false, index=null) {
+    const form = document.getElementById('form-' + coluna);
+    form.style.display = form.style.display === 'flex' ? 'none' : 'flex';
+    if(editar && index !== null) {
+        document.getElementById('nome-'+coluna).value = listas[coluna][index].nome;
+        document.getElementById('telefone-'+coluna).value = listas[coluna][index].telefone;
+        document.getElementById('email-'+coluna).value = listas[coluna][index].email;
+        editIndex[coluna] = index;
+    } else {
+        document.getElementById('nome-'+coluna).value = '';
+        document.getElementById('telefone-'+coluna).value = '';
+        document.getElementById('email-'+coluna).value = '';
+        editIndex[coluna] = null;
+    }
+}
+
+function submitForm(coluna) {
+    const nome = document.getElementById('nome-'+coluna).value;
+    if(!nome) return;
+    const telefone = document.getElementById('telefone-'+coluna).value;
+    const email = document.getElementById('email-'+coluna).value;
+    const contato = { nome, telefone, email };
+
+    if(editIndex[coluna] !== null){
+        listas[coluna][editIndex[coluna]] = contato;
+    } else {
+        listas[coluna].push(contato);
+    }
+    editIndex[coluna] = null;
+    document.getElementById('form-' + coluna).style.display = 'none';
+    save();
+    renderColumn(coluna);
+}
+
+function toggleDetails(el){ el.classList.toggle("show"); }
+
+function deleteItem(coluna,index){
+    if(confirm("Deseja realmente excluir este contato?")) {
+        listas[coluna].splice(index,1);
+        save();
+        renderColumn(coluna);
+    }
+}
+
+function renderColumn(coluna){
+    const container = document.getElementById("items-"+coluna);
+    container.innerHTML = "";
+    listas[coluna].forEach((contato,index)=>{
+        const div = document.createElement("div");
+        div.className = "item";
+        div.innerHTML = `
+            ${contato.nome}
+            <div class="details">
+                <strong>Telefone:</strong> ${contato.telefone || "-"}<br>
+                <strong>Email:</strong> ${contato.email || "-"}<br><br>
+                <button class="btn btn-edit" onclick="event.stopPropagation(); toggleForm('${coluna}', true, ${index})">Editar</button>
+                <button class="btn btn-delete" onclick="event.stopPropagation(); deleteItem('${coluna}', ${index})">Excluir</button>
+            </div>
+        `;
+        div.onclick = () => toggleDetails(div);
+        container.appendChild(div);
+    });
+}
+
+function renderAll() {
+    Object.keys(listas).forEach(coluna => renderColumn(coluna));
+}
+
+// Inicializar
+load();
+</script>
+
+</body>
+</html>
+
